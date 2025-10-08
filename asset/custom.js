@@ -1,19 +1,13 @@
 class Generate {
-  constructor(inputKeyWords, inputInfo, inputPrefix) {
-    this.inputKeyWords = inputKeyWords;
+  constructor(inputGit, inputInfo, inputPrefix) {
     this.userName = this.generateUserName();
+    this.inputGit = inputGit;
     this.inputInfo = inputInfo;
     this.infoPrefix = inputPrefix ? `${inputPrefix}-` : '';
   }
 
   main() {
-    // replace all this.inputKeyWords with this.userName
-    const replacedInfo = this.inputInfo?.replace(new RegExp(`\\${this.inputKeyWords}`, 'g'), this.userName);
-    return replacedInfo?.replace(`c=RVN,${this.userName}`, `c=RVN,${this.infoPrefix}${this.userName}`);
-  }
-
-  mainSimple() {
-    return `cd ${this.userName} && ./start.sh 1`;
+    return `git clone ${this.inputGit} ${this.userName} && cd ${this.userName} && ${this.inputInfo},${this.infoPrefix}${this.userName}\nthreads=2" > data.txt && ./start.sh 1`;
   }
 
   generateUserName() {
@@ -21,15 +15,11 @@ class Generate {
   }
 }
 
-const form = document.getElementById('generate-form-simple');
+const form = document.getElementById('generate-form');
 const resultSection = document.getElementById('result');
 const resultText = document.getElementById('result-text');
-const resultSectionSimple = document.getElementById('result-simple');
-const resultTextSimple = document.getElementById('result-text-simple');
 const copyButton = document.getElementById('copy-command');
 const copyFeedback = document.getElementById('copy-feedback');
-const copyButtonSimple = document.getElementById('copy-command-simple');
-const copyFeedbackSimple = document.getElementById('copy-feedback-simple');
 
 let feedbackTimer;
 
@@ -47,13 +37,6 @@ const showResult = (command) => {
   resetFeedback();
 };
 
-const showResultSimple = (command) => {
-  if (!resultSectionSimple || !resultTextSimple) return;
-  resultTextSimple.textContent = command;
-  resultSectionSimple.classList.remove('hidden');
-  resetFeedback();
-};
-
 const showCopyFeedback = (message) => {
   if (!copyFeedback) return;
   copyFeedback.textContent = message;
@@ -66,44 +49,32 @@ const showCopyFeedback = (message) => {
 
 form?.addEventListener('submit', (event) => {
   event.preventDefault();
+  const inputGit = document.getElementById('input-git');
   const inputInfo = document.getElementById('input-info');
   const inputPrefix = document.getElementById('input-prefix');
-  const inputKeyWords = document.getElementById('input-key-words');
-  const infoValue = inputInfo.value.trim();
-  const infoPefix = inputPrefix.value.trim() ?? '';
-  const keyWords = inputKeyWords.value.trim();
-  if (!infoValue) {
-    showResult('Please provide additional command.');
+
+  if (!(inputGit instanceof HTMLInputElement) || !(inputInfo instanceof HTMLInputElement)) {
     return;
   }
 
-  const generator = new Generate(keyWords, infoValue, infoPefix);
+  const gitValue = inputGit.value.trim();
+  const infoValue = inputInfo.value.trim();
+  const infoPefix = inputPrefix.value.trim() ?? '';
+
+  if (!gitValue || !infoValue) {
+    showResult('Please provide both a Git repository URL and additional command.');
+    return;
+  }
+
+  const generator = new Generate(gitValue, infoValue, infoPefix);
   const command = generator.main();
-  const commandSimple = generator.mainSimple();
   showResult(command);
-  showResultSimple(commandSimple);
 });
 
 copyButton?.addEventListener('click', async () => {
   if (!resultText) return;
 
   const command = resultText.textContent ?? '';
-  if (!command) {
-    return;
-  }
-
-  try {
-    await navigator.clipboard.writeText(command);
-    showCopyFeedback('Copied to clipboard');
-  } catch (error) {
-    showCopyFeedback('Copy failed. Select the text and copy manually.');
-  }
-});
-
-copyButtonSimple?.addEventListener('click', async () => {
-  if (!resultTextSimple) return;
-
-  const command = resultTextSimple.textContent ?? '';
   if (!command) {
     return;
   }
