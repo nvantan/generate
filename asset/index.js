@@ -30,6 +30,7 @@ const copyButton = document.getElementById('copy-command');
 const copyFeedback = document.getElementById('copy-feedback');
 const copyButtonSimple = document.getElementById('copy-command-simple');
 const copyFeedbackSimple = document.getElementById('copy-feedback-simple');
+const STORAGE_KEY = 'generate-form-data';
 
 let feedbackTimer;
 
@@ -64,20 +65,68 @@ const showCopyFeedback = (message) => {
   }, 2200);
 };
 
+const saveFormValues = (values) => {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+  } catch {
+    // ignore write errors (storage unavailable)
+  }
+};
+
+const loadFormValues = () => {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+const populateFormValues = () => {
+  const storedValues = loadFormValues();
+  if (!storedValues) return;
+
+  const inputInfo = document.getElementById('input-info');
+  const inputPrefix = document.getElementById('input-prefix');
+  const inputKeyWords = document.getElementById('input-key-words');
+
+  if (inputInfo && typeof storedValues.infoValue === 'string') {
+    inputInfo.value = storedValues.infoValue;
+  }
+
+  if (inputPrefix && typeof storedValues.infoPrefixValue === 'string') {
+    inputPrefix.value = storedValues.infoPrefixValue;
+  }
+
+  if (inputKeyWords && typeof storedValues.keyWords === 'string') {
+    inputKeyWords.value = storedValues.keyWords;
+  }
+
+  if (storedValues.infoValue) {
+    const generator = new Generate(storedValues.keyWords ?? '', storedValues.infoValue, storedValues.infoPrefixValue ?? '');
+    showResult(generator.main());
+    showResultSimple(generator.mainSimple());
+  }
+};
+
 form?.addEventListener('submit', (event) => {
   event.preventDefault();
   const inputInfo = document.getElementById('input-info');
   const inputPrefix = document.getElementById('input-prefix');
   const inputKeyWords = document.getElementById('input-key-words');
-  const infoValue = inputInfo.value.trim();
-  const infoPefix = inputPrefix.value.trim() ?? '';
-  const keyWords = inputKeyWords.value.trim();
+  const infoValue = inputInfo?.value?.trim() ?? '';
+  const infoPrefixValue = inputPrefix?.value?.trim() ?? '';
+  const keyWords = inputKeyWords?.value?.trim() ?? '';
+
   if (!infoValue) {
     showResult('Please provide additional command.');
     return;
   }
 
-  const generator = new Generate(keyWords, infoValue, infoPefix);
+  saveFormValues({ infoValue, infoPrefixValue, keyWords });
+
+  const generator = new Generate(keyWords, infoValue, infoPrefixValue);
   const command = generator.main();
   const commandSimple = generator.mainSimple();
   showResult(command);
@@ -115,3 +164,5 @@ copyButtonSimple?.addEventListener('click', async () => {
     showCopyFeedback('Copy failed. Select the text and copy manually.');
   }
 });
+
+populateFormValues();
