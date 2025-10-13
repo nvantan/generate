@@ -1,3 +1,46 @@
+class CopyIcon extends HTMLElement {
+  static get observedAttributes() {
+    return ['class', 'svg-class', 'stroke-width'];
+  }
+
+  connectedCallback() {
+    this.render();
+  }
+
+  attributeChangedCallback() {
+    if (this.isConnected) {
+      this.render();
+    }
+  }
+
+  render() {
+    const svgClasses = this.getAttribute('svg-class') ?? this.getAttribute('class') ?? 'h-4 w-4';
+    const strokeWidth = this.getAttribute('stroke-width') ?? '1.5';
+    const template = document.createElement('template');
+    template.innerHTML = `
+      <svg
+        class="${svgClasses}"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="${strokeWidth}"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8 16h9" />
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M12 4h-3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-8.5a1.5 1.5 0 0 0-.44-1.06l-4.5-4.5A1.5 1.5 0 0 0 12.94 4z"
+        />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 4v3.5a1.5 1.5 0 0 0 1.5 1.5H20" />
+      </svg>
+    `;
+    this.replaceChildren(template.content.cloneNode(true));
+  }
+}
+
+customElements.define('copy-icon', CopyIcon);
+
 class Generate {
   constructor(inputKeyWords, inputInfo, inputPrefix) {
     this.inputKeyWords = inputKeyWords;
